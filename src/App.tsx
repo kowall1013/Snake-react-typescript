@@ -1,10 +1,19 @@
+import styled from 'styled-components'
 import GlobalStyles from './GlobalStyle'
+import Snake from './components/Snake'
+
+const Wrapper = styled.div`
+  display: grid;
+  min-height: 100vh;
+  place-content: center;
+`
 
 function App() {
   return (
-    <div>
+    <Wrapper>
       <GlobalStyles />
-    </div>
+      <Snake />
+    </Wrapper>
   )
 }
 
