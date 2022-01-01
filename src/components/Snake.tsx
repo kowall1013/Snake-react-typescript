@@ -29,7 +29,6 @@ const Play = styled.button`
     background-color: #8843f299;
   }
 `
-
 const GameOver = styled.div`
   position: fixed;
   top: 50%;
@@ -37,6 +36,9 @@ const GameOver = styled.div`
   padding: 16px 60px;
   border: 1px solid black;
   background-color: #ff5959;
+`
+const Apple = styled.img`
+  display: none;
 `
 
 const CANVAS_WIDTH = 1000
@@ -47,16 +49,15 @@ const SCALE = 25
 const SNAKE_WIDTH = 1
 const SNAKE_HEIGHT = 1
 const INITIAL_SNAKE = [
-  [0, 0],
-  [1, 0],
-  [2, 0],
-  [3, 0],
-  [4, 0],
+  [4, 10],
+  [4, 10],
 ]
+const INITIAL_APPLE = [4, 4]
 
 function Snake(): JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const [snake, setSnake] = useState<number[][]>(INITIAL_SNAKE)
+  const [snake, setSnake] = useState(INITIAL_SNAKE)
+  const [apple, setApple] = useState(INITIAL_APPLE)
   const [snakeDirection, setSnakeDirection] = useState([1, 0])
   const [gameOver, setGameOver] = useState(false)
   const [delay, setDelay] = useState<number | null>(INITIAL_DELAY)
@@ -66,16 +67,24 @@ function Snake(): JSX.Element {
   useEffect(() => {
     const canvas = canvasRef.current
     const ctx = canvas?.getContext('2d')
+    const fruit = document.getElementById('apple') as HTMLCanvasElement
 
     if (ctx) {
       ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0)
       ctx.fillStyle = SNAKE_COLOR
       ctx.clearRect(0, 0, window.innerWidth, window.innerHeight)
       snake.map(([x, y]) => ctx.fillRect(x, y, SNAKE_WIDTH, SNAKE_HEIGHT))
+      ctx.drawImage(fruit, apple[0], apple[1], 1, 1)
     }
-  }, [snake, gameOver])
+  }, [snake, gameOver, apple])
 
-  function playGame() {}
+  function playGame() {
+    setSnakeDirection([1, 0])
+    setGameOver(false)
+    setSnake(INITIAL_SNAKE)
+    setApple(INITIAL_APPLE)
+    setDelay(INITIAL_DELAY)
+  }
 
   function runGame() {
     const newSnake = [...snake]
@@ -84,37 +93,45 @@ function Snake(): JSX.Element {
       newSnake[0][1] + snakeDirection[1],
     ]
     newSnake.unshift(newSnakeHead)
-    newSnake.pop()
-    console.log(newSnake)
-    if (!checkColision(newSnake)) {
+
+    if (checkColision(newSnakeHead)) {
       setGameOver(true)
       setDelay(null)
+    }
+
+    if (!appleAte(newSnake)) {
+      newSnake.pop()
     }
 
     setSnake(newSnake)
   }
 
-  function checkColision(snake: number[][]) {
-    if (snake[1][0] >= 40 || snake[1][0] < 0) {
-      return false
+  function checkColision(head: number[]) {
+    console.log(head)
+    if (head[0] >= CANVAS_WIDTH / SCALE || head[0] <= -1) {
+      return true
+    }
+    if (head[1] >= CANVAS_HEIGHT / SCALE || head[1] <= -1) {
+      return true
     }
 
-    if (snake[1][1] >= 20 || snake[1][1] < 0) {
-      return false
+    for (const s of snake) {
+      if (head[0] === s[0] && head[1] === s[1]) return true
     }
 
-    return true
+    return false
   }
 
-  // function checkCollision(head: number[]) {
-  // 	for (let i = 0; i < head.length; i++) {
-  // 		if (head[i] < 0 || head[i] * scale >= canvasX) return true
-  // 	}
-  // 	for (const s of snake) {
-  // 		if (head[0] === s[0] && head[1] === s[1]) return true
-  // 	}
-  // 	return false
-  // }
+  function appleAte(snake: number[][]) {
+    const widthCordNumber = Math.floor((Math.random() * CANVAS_WIDTH) / SCALE)
+    const heightCordNumber = Math.floor((Math.random() * CANVAS_HEIGHT) / SCALE)
+    if (snake[0][0] === apple[0] && snake[0][1] === apple[1]) {
+      let newApple = [widthCordNumber, heightCordNumber]
+      setApple(newApple)
+      return true
+    }
+    return false
+  }
 
   function handleDirection(e: React.KeyboardEvent<HTMLDivElement>) {
     const key = e.key
@@ -138,6 +155,7 @@ function Snake(): JSX.Element {
 
   return (
     <Wrapper tabIndex={0} onKeyDown={e => handleDirection(e)}>
+      <Apple src="./images/applePixels.png" alt="fruit" width={30} id="apple" />
       <Canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} />
       <Play onClick={playGame}>Play</Play>
       {gameOver ? <GameOver>Game Over</GameOver> : null}
